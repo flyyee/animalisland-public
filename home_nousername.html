@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>org page</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+
+<body>
+    <h1>Animal island</h1>
+    Your name: <input type="text" id="username"><br><br>
+    <a id="room1" onclick="redirectToRoom(1)">Room 1 <span id="room1capacity">(3/5)</span></a><br><br>
+    <a id="room2" onclick="redirectToRoom(2)">Room 2 <span id="room2capacity">(3/5)</span></a><br><br>
+    <a id="room3" onclick="redirectToRoom(3)">Room 3 <span id="room3capacity">(3/5)</span></a><br><br>
+    <a id="room4" onclick="redirectToRoom(4)">Room 4 <span id="room4capacity">(3/5)</span></a><br><br>
+    <a id="room5" onclick="redirectToRoom(5)">Room 5 <span id="room5capacity">(3/5)</span></a><br><br>
+</body>
+
+<style>
+    body {
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #CC2F2F;
+        color: #f8e9a1;
+        font-size: 20px;
+    }
+
+    body>a {
+        cursor: pointer;
+        background-color: #24305e;
+        color: #f8e9a1;
+        font-size: 30px;
+        border-radius: 5px;
+        position: relative;
+        padding: 5px;
+        /* margin-left: 5px; */
+        /* margin-right: 5px; */
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.24);
+    }
+
+    body>input {
+        width: 20%;
+        font-size: 20px;
+        padding: 10px 6px;
+        margin: 6px 0;
+        border: none;
+        border-bottom: 2px solid #f8e9a1;
+        background-color: #CC2F2F;
+        outline: 2px solid #f8eaa100;
+        color: #24305e;
+        font-weight: bold;
+    }
+    body>input:focus{
+        outline: 2px solid #f8e9a1;
+        border-bottom: 2px solid #f8eaa100;
+        background-color: #f14242;
+    }
+</style>
+
+<script>
+    swal("Please enter your name to play.", "", "warning").then(
+        wtv => window.location.href = "/org"
+    )
+    let serverIsOk = false
+    // console.log("here")
+
+    function makeid(length) {
+        var result = '';
+        var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for (var i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+
+    function start() {
+        if (!"id" in window.localStorage || window.localStorage["id"] == null) {
+            window.localStorage.setItem("id", makeid(16))
+            // console.log(makeid(16))
+        }
+        if ("username" in window.localStorage && window.localStorage["id"] != null) {
+            $("#username").val(window.localStorage.getItem("username"))
+        }
+    }
+
+    start()
+
+    function update() {
+        serverIsOk = !serverIsOk
+        let response = serverIsOk ? 'Server ok text' : 'Starting text';
+        $('#changer').text(response);
+    }
+
+    setInterval(update, 1000)
+
+    function redirectToRoom(roomNumber) {
+        window.localStorage.setItem("username", document.getElementById("username").value)
+        window.localStorage.setItem("roomNumber", roomNumber)
+        window.location.href = "/org/room1";
+    }
+</script>
+
+</html>

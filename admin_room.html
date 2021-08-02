@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>le room</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+
+<script>
+    let globalGameState = null
+    let prevTurnInfo = []
+
+    let dealtCards = [1, 2, 3, 4, 5, 6]
+    let dealtCardsStatus = [false, false, false, false, false, false]
+    function textselect(tsnumber) {
+        let inactive_card = false
+        let notyourturn_card = false
+        if (tsnumber == -1) {
+            inactive_card = true
+        }
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            // swal("Not your turn")
+            notyourturn_card = true
+        }
+        if (notyourturn_card && inactive_card) {
+            swal("It's not your turn", "", "warning")
+        } else if (notyourturn_card) {
+            swal("It's not your turn", "", "warning")
+        } else if (inactive_card) {
+            swal("This card has been chosen by another player. Choose another card", "", "warning")
+        }
+        if (!inactive_card && !notyourturn_card) {
+            if (tsnumber < dealtCards.length) {
+                if (dealtCardsStatus[tsnumber] == true) { // current card selected, aka toggle select
+                    dealtCardsStatus[tsnumber] = false
+                } else {
+                    if (dealtCardsStatus.includes(true)) { // some other card has been selected
+                        dealtCardsStatus = Array(dealtCardsStatus.length).fill(false)
+                    }
+                    dealtCardsStatus[tsnumber] = true
+                }
+            }
+            for (let x = 0; x < dealtCards.length; x++) {
+                $('#ts' + String(x)).css("color", dealtCardsStatus[x] ? "#F5E609" : "black")
+            }
+        }
+    }
+    let handCards = [1, 2, 3, 4, 5, 6]
+    let handCardsStatus = [false, false, false, false, false, false]
+    function htextselect(tsnumber) {
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            swal("It's not your turn", "", "warning")
+        } else {
+            if (tsnumber < dealtCards.length) {
+                if (handCardsStatus[tsnumber] == true) { // current card selected, aka toggle select
+                    handCardsStatus[tsnumber] = false
+                } else {
+                    if (handCardsStatus.includes(true)) { // some other card has been selected
+                        handCardsStatus = Array(handCardsStatus.length).fill(false)
+                    }
+                    handCardsStatus[tsnumber] = true
+                }
+            }
+            for (let x = 0; x < dealtCards.length; x++) {
+                $('#hts' + String(x)).css("color", handCardsStatus[x] ? "#F5E609" : "black")
+            }
+        }
+    }
+
+    let dealtCardsInfoStatus = [false, false, false, false, false, false]
+    function revealturninfo(tsnumber) {
+        console.log("here")
+        if (tsnumber < dealtCards.length) {
+            dealtCardsInfoStatus[tsnumber] = !dealtCardsInfoStatus[tsnumber]
+        }
+    }
+
+    let hdealtCardsInfoStatus = [false, false, false, false, false, false]
+    function hrevealturninfo(tsnumber) {
+        console.log("here")
+        if (tsnumber < handCards.length) {
+            hdealtCardsInfoStatus[tsnumber] = !hdealtCardsInfoStatus[tsnumber]
+        }
+    }
+
+    function pass() {
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            swal("It's not your turn", "", "warning")
+        } else {
+            if (!"id" in window.localStorage) {
+                window.localStorage.setItem("id", makeid(16))
+            }
+            id = window.localStorage.getItem("id")
+            username = window.localStorage.getItem("username")
+            roomNumber = window.localStorage.getItem("roomNumber")
+
+            fetch(`/api/pass?roomNumber=${roomNumber}&username=${username}&id=${id}`).then(
+                res => {
+                    console.log(res)
+                    dealtCardsStatus = [false, false, false, false, false, false]
+                    handCardsStatus = [false, false, false, false, false, false]
+                }
+            )
+        }
+    }
+
+    function take() {
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            swal("It's not your turn", "", "warning")
+        } else {
+            if (!"id" in window.localStorage) {
+                window.localStorage.setItem("id", makeid(16))
+            }
+            id = window.localStorage.getItem("id")
+            username = window.localStorage.getItem("username")
+            roomNumber = window.localStorage.getItem("roomNumber")
+
+            let myuser
+            for (let user of globalGameState.users) {
+                if (user.username == window.localStorage.getItem("username")) {
+                    myuser = user
+                    break
+                }
+            }
+            // console.log("")
+            if (myuser.cards.length >= 4) {
+                swal("You have too many cards. You cannot take any more cards.", "", "warning")
+            } else {
+                let targetCardId = -1
+                for (let x = 0; x < dealtCardsStatus.length; x++) {
+                    if (dealtCardsStatus[x] == true) {
+                        targetCardId = x
+                        break
+                    }
+                }
+                if (targetCardId == -1) {
+                    swal("Choose a card to take", "", "warning")
+                } else {
+                    fetch(`/api/take?roomNumber=${roomNumber}&username=${username}&id=${id}&targetCard=${targetCardId}`).then(
+                        res => {
+                            // console.log(res)
+                            if (res.success == 0) {
+                                swal("Unable to choose this card", "", "warning")
+                            }
+                            dealtCardsStatus = [false, false, false, false, false, false]
+                            handCardsStatus = [false, false, false, false, false, false]
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    function discard() {
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            swal("It's not your turn", "", "warning")
+        } else {
+            if (!"id" in window.localStorage) {
+                window.localStorage.setItem("id", makeid(16))
+            }
+            id = window.localStorage.getItem("id")
+            username = window.localStorage.getItem("username")
+            roomNumber = window.localStorage.getItem("roomNumber")
+
+            let myuser
+            for (let user of globalGameState.users) {
+                if (user.username == window.localStorage.getItem("username")) {
+                    myuser = user
+                    break
+                }
+            }
+            let targetCardId = -1
+            for (let x = 0; x < handCardsStatus.length; x++) {
+                if (handCardsStatus[x] == true) {
+                    targetCardId = x
+                    break
+                }
+            }
+            if (targetCardId == -1) {
+                swal("Choose a card to discard", "", "warning")
+            } else if (myuser.cards[targetCardId].replaceAfter != 0) {
+                swal("You cannot discard this card yet.", "", "warning")
+            } else {
+                fetch(`/api/discard?roomNumber=${roomNumber}&username=${username}&id=${id}&targetCard=${targetCardId}`).then(
+                    res => {
+                        // console.log(res)
+                        if (res.success == 0) {
+                            swal("Unable to discard this card", "", "warning")
+                        }
+                        dealtCardsStatus = [false, false, false, false, false, false]
+                        handCardsStatus = [false, false, false, false, false, false]
+                    }
+                )
+            }
+        }
+    }
+
+    function exchange() {
+        if (globalGameState.turns[globalGameState.turns.length - 1].id != window.localStorage.getItem("id")) {
+            swal("It's not your turn", "", "warning")
+        } else {
+            if (!"id" in window.localStorage) {
+                window.localStorage.setItem("id", makeid(16))
+            }
+            id = window.localStorage.getItem("id")
+            username = window.localStorage.getItem("username")
+            roomNumber = window.localStorage.getItem("roomNumber")
+
+            let myuser
+            for (let user of globalGameState.users) {
+                if (user.username == window.localStorage.getItem("username")) {
+                    myuser = user
+                    break
+                }
+            }
+            let targetCardId = -1
+            for (let x = 0; x < handCardsStatus.length; x++) {
+                if (handCardsStatus[x] == true) {
+                    targetCardId = x
+                    break
+                }
+            }
+            let wantedCardId = -1
+            for (let x = 0; x < dealtCardsStatus.length; x++) {
+                if (dealtCardsStatus[x] == true) {
+                    wantedCardId = x
+                    break
+                }
+            }
+
+            if (targetCardId == -1) {
+                swal("Choose a card to discard", "", "warning")
+            } else if (wantedCardId == -1) {
+                swal("Choose a card to take", "", "warning")
+            } else {
+                if (myuser.cards[targetCardId].color != globalGameState.dealtcards[wantedCardId].color) {
+                    console.log("wrong color")
+                    swal("You can only swap cards with the same color (top-left)", "", "warning")
+                } else if (myuser.cards[targetCardId].replaceAfter != 0) {
+                    swal("You cannot replace this card yet.", "", "warning")
+                } else {
+                    fetch(`/api/exchange?roomNumber=${roomNumber}&username=${username}&id=${id}&targetCard=${targetCardId}&wantedCard=${wantedCardId}`).then(
+                        res => {
+                            // console.log(res)
+                            if (res.success == 0) {
+                                swal("Unable to exchange these cards", "", "warning")
+                            }
+                            dealtCardsStatus = [false, false, false, false, false, false]
+                            handCardsStatus = [false, false, false, false, false, false]
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    function audioControl() {
+        console.log($('#music').text())
+        if ($('#audioControl').text() == 'Play Music') {
+            document.getElementById('music').play();
+            $('#audioControl').text('Mute Music')
+        } else { 
+            document.getElementById('music').pause();
+            $('#audioControl').text('Play Music')
+        }
+    }
+    
+    function adminpass() {
+        window.open("/password/admin/pass_room" + window.localStorage.getItem("roomNumber"))
+    }
+</script>
+
+<body>
+    <!-- <iframe src="/jungle.mp3" allow="autoplay" style="display:none" id="iframeAudio">
+    </iframe>  -->
+    <audio id="music" src="/jungle.mp3" loop></audio>
+    <span onclick="adminpass()">Pass the turn of whoever's turn it is now (might not be current user)</span><br>
+    <span>Set id:</span>
+    <div id="setid" style="height: 200px;"></div>
+    <div id="roomTitleDiv">Room <span id="roomTitle">0</span></div>
+    <div class="cardTable" id="cardTable">
+    </div>
+    <div class="cardActions">
+        <a>Pass</a>
+        <a>Take</a>
+        <a>Discard</a>
+        <a>Swap</a>
+        <span id="loadindicator">⠄⠄⠄⠄⠠⠠⠠⠠</span>
+    </div>
+    <div id="yourhandtextdiv">
+        <span id="yourhandtext" class="yourhandtext">
+            Your Hand:
+        </span>
+        <span class="yourhandtext">
+            <span id="yourpointstextid">
+                You:
+            </span>
+            <span id="yourpointstextpoints">
+                0
+            </span></span><br>
+    </div>
+    <div id="handTableNoCards">No cards currently</div>
+    <div class="cardTable" id="handTable">
+    </div>
+    </div>
+    <a onclick="audioControl()" id="audioControl">Play Music</a>
+    <!-- <a onclick="document.getElementById('music').pause();">Mute Music</a> -->
+</body>
+
+<style>
+    body {
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #8b3b3b;
+    }
+
+    #roomTitleDiv {
+        color: beige;
+        font-size: 50px;
+    }
+
+    .cardActions {
+        padding: 15px;
+    }
+
+    .cardActions a {
+        cursor: pointer;
+        background-color: #24305e;
+        color: #f8e9a1;
+        font-size: 20px;
+        border-radius: 5px;
+        padding: 5px;
+        margin-left: 5px;
+        margin-right: 5px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.24);
+    }
+
+    #loadindicator {
+        color: #f8e9a1;
+        font-size: 20px;
+        padding: 5px;
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+
+    #yourhandtextdiv {
+        padding: 5px;
+    }
+
+    #yourhandtext,
+    .yourhandtext {
+        /* background-color: #24305e; */
+        color: #f8e9a1;
+        font-size: 20px;
+        border: 1px solid #f8e9a1;
+        border-radius: 2px;
+        padding: 5px;
+        margin-left: 5px;
+        margin-right: 5px;
+        /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.24); */
+    }
+
+    #handTable {
+        /* padding: 5px; */
+        color: #f8e9a1;
+        text-align: center;
+    }
+
+    .cardTable {
+        display: flex;
+        flex-direction: row;
+        /* flex-wrap: wrap; */
+        align-items: flex-start;
+        justify-content: space-between;
+        align-content: space-around;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    #handTableNoCards {
+        color: #f8e9a1;
+        text-align: center;
+    }
+
+    .dealercard {
+        border-radius: 5px;
+        max-width: 250px;
+        width: 100%;
+        height: 250px;
+        margin: 6px;
+        position: relative;
+        background-size: auto;
+        box-shadow: 2px 2px 2px 0px rgb(39, 39, 39);
+    }
+
+    .playerprofile {
+        max-height: 167px;
+        /* height: 100%; */
+        display: flex;
+        flex-direction: column;
+        /* justify-content: space-around; */
+        /* flex-wrap: wrap; */
+        max-width: 125px;
+        margin: 6px;
+        border-radius: 15px;
+        background-color: #a8d0e6;
+        box-shadow: 3px 3px 2px 0px rgb(39, 39, 39);
+        text-align: left;
+        padding-top: 5px;
+        padding-bottom: 15px;
+    }
+
+    .playerprofile .playername,
+    .playerprofile .playerturn,
+    .playerprofile .playerpoints {
+        padding-left: 5px;
+        margin-top: 5px;
+        margin-left: 5px;
+        max-width: 85%;
+        font-size: 20px;
+        font-weight: bold;
+        font-family: Arial, Helvetica, sans-serif;
+        /* position: absolute; */
+        display: block;
+        top: 0;
+        border-radius: 3px;
+    }
+
+    .dealercard .playername {
+        left: 5%;
+        color: beige;
+        background-color: #374785;
+    }
+
+    .dealercard .playerturn {
+        left: 50%;
+        background-color: #24305e;
+        color: beige;
+    }
+
+    .dealercard .playerpoints {
+        left: 90%;
+        color: beige;
+        background-color: #24305e;
+    }
+
+    .dealercard .textbenefit,
+    .dealercard .textturn,
+    .dealercard .textcost,
+    .dealercard .textselected {
+        font-size: 20px;
+        font-weight: bold;
+        /* font-family: Arial, Helvetica, sans-serif; */
+        font-family: 'Courier New', Courier, monospace;
+        position: absolute;
+        display: block;
+        top: 5%;
+        background-color: grey;
+        border: 1px solid black;
+        border-radius: 13px;
+        padding-left: 2px;
+        padding-right: 2px;
+        /* text-shadow: 0 1px 2px rgba(0,0,0,0.5); */
+    }
+
+    .dealercard .textcolor {
+        font-size: 20px;
+        font-weight: bold;
+        font-family: 'Courier New', Courier, monospace;
+        position: absolute;
+        display: block;
+        top: 5%;
+        left: 5%;
+        /* background-color: grey; */
+        /* border: 1px solid black; */
+        border-radius: 13px;
+        /* padding-left: 2px; */
+        /* padding-right: 2px; */
+        /* text-shadow: 0 1px 2px rgba(0,0,0,0.5); */
+    }
+
+    .dealercard .textinfo {
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: Arial, Helvetica, sans-serif;
+        /* font-family: 'Courier New', Courier, monospace; */
+        position: absolute;
+        display: block;
+        opacity: 0;
+        height: 60%;
+        top: 35%;
+        left: 5%;
+        width: 85%;
+        background-color: grey;
+        border: 1px solid black;
+        border-radius: 13px;
+        padding-left: 2px;
+        padding-right: 2px;
+        /* text-shadow: 0 1px 2px rgba(0,0,0,0.5); */
+    }
+
+    .dealercard .textinfo:hover {
+        opacity: 1;
+    }
+
+    .dealercard .textbenefit {
+        left: 20%;
+        color: #a5d275;
+    }
+
+    .dealercard .textturn {
+        left: 40%;
+        color: #4056a1;
+    }
+
+    .dealercard .textcost {
+        left: 60%;
+        color: #f13c20;
+    }
+
+    .dealercard .textselected {
+        cursor: pointer;
+        left: 85%;
+        color: black;
+    }
+</style>
+
+<script>
+    let serverIsOk = false
+    console.log("here")
+
+    let username
+    let myid
+
+    function makeid(length) {
+        var result = '';
+        var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for (var i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+
+    function start() {
+        if (!"id" in window.localStorage || window.localStorage["id"] == null) {
+            window.localStorage.setItem("id", makeid(16))
+            console.log(makeid(16))
+        }
+        id = window.localStorage.getItem("id")
+        console.log(id)
+        username = window.localStorage.getItem("username")
+        if (username == "") {
+            username = "a"
+            // window.location.href = "/org?nousername=1";
+        } else {
+            roomNumber = window.localStorage.getItem("roomNumber")
+            $('#roomTitle').text(roomNumber)
+        }
+    }
+
+    function loadingIndicStart() {
+        $("#loadindicator").text("⠁⠂⠄⡀⢀⠠⠐⠈")
+    }
+
+    function loadingIndicCont() {
+        if ($("#loadindicator").text() == "⠁⠂⠄⡀⢀⠠⠐⠈") {
+            $("#loadindicator").text("⠈⠁⠂⠄⡀⢀⠠⠐")
+        } else if ($("#loadindicator").text() == "⠈⠁⠂⠄⡀⢀⠠⠐") {
+            $("#loadindicator").text("⠐⠈⠁⠂⠄⡀⢀⠠")
+        } else if ($("#loadindicator").text() == "⠐⠈⠁⠂⠄⡀⢀⠠") {
+            $("#loadindicator").text("⠠⠐⠈⠁⠂⠄⡀⢀")
+        } else if ($("#loadindicator").text() == "⠠⠐⠈⠁⠂⠄⡀⢀") {
+            $("#loadindicator").text("⢀⠠⠐⠈⠁⠂⠄⡀")
+        } else if ($("#loadindicator").text() == "⢀⠠⠐⠈⠁⠂⠄⡀") {
+            $("#loadindicator").text("⡀⢀⠠⠐⠈⠁⠂⠄")
+        } else if ($("#loadindicator").text() == "⡀⢀⠠⠐⠈⠁⠂⠄") {
+            $("#loadindicator").text("⠄⡀⢀⠠⠐⠈⠁⠂")
+        } else if ($("#loadindicator").text() == "⠄⡀⢀⠠⠐⠈⠁⠂") {
+            $("#loadindicator").text("⠂⠄⡀⢀⠠⠐⠈⠁")
+        } else if ($("#loadindicator").text() == "⠂⠄⡀⢀⠠⠐⠈⠁") {
+            $("#loadindicator").text("⠁⠂⠄⠄⠠⠠⠐⠈")
+        } else if ($("#loadindicator").text() == "⠁⠂⠄⠄⠠⠠⠐⠈") {
+            $("#loadindicator").text("⠄⠄⠄⠄⠠⠠⠠⠠ ")
+        }
+    }
+
+    function responsive() {
+        loadingIndicCont()
+    }
+
+    function change_id(id, un) {
+        window.localStorage.setItem("id", id)
+        window.localStorage.setItem("username", un)
+    }
+
+    function update() {
+        $("#yourpointstextid").text(window.localStorage.getItem("username"))
+        console.log("Polling with ", username, roomNumber)
+        fetch("/api/poll_room" + roomNumber).then(res => res.json()).then(
+            res => {
+                if (res.success) {
+                    let admin_users = res.gameState.users
+                    let admin_users_text = ""
+                    for (let user of admin_users) {
+                        admin_users_text += `<a onclick="change_id('${user.id}', '${user.username}')">${user.username}</a><br>`
+                    }
+                    console.log("WWhere")
+                    $("#setid").html(admin_users_text)
+                    globalGameState = res.gameState
+                    if (globalGameState.status == "ended") {
+                        let endstate = globalGameState.endstate
+                        let scoreInfo = ""
+                        for (let x = 0; x < endstate.length; x++) {
+                            let y = x + 1
+                            scoreInfo += `\n${y}. ${endstate[x].user}: ${endstate[x].points}`
+                        }
+                        swal({
+                            title: "Game over!",
+                            text: "Thanks for playing!" + scoreInfo,
+                            icon: "success",
+                            button: "Return to home",
+                        }).then(smth => {
+                            window.location.href = "/org";
+                        })
+                        // swal("Game over! Thanks for playing!" + scoreInfo)
+                    } else if (globalGameState.status == "restarted") {
+                        $("#handTableNoCards").text("Please wait patiently for players to join.")
+                    } else if (globalGameState.status == "started") {
+                        // loading indicator
+                        if (globalGameState.turns.length != prevTurnInfo.length &&
+                            globalGameState.turns[globalGameState.turns.length - 1] != prevTurnInfo[prevTurnInfo.length - 1]) {
+                            // turns are different
+                            if (globalGameState.turns[globalGameState.turns.length - 1].id == window.localStorage.getItem("id")) {
+                                swal("It's your turn!", "", "info")
+                            }
+                            prevTurnInfo = globalGameState.turns
+                            loadingIndicStart()
+                        }
+                        // player profile calculations
+                        let default_ppcard = {
+                            name: "No player",
+                            points: 0,
+                            turn: "waiting..."
+                        }
+                        let ppcards = [JSON.parse(JSON.stringify(default_ppcard)),
+                        JSON.parse(JSON.stringify(default_ppcard)),
+                        JSON.parse(JSON.stringify(default_ppcard)),
+                        JSON.parse(JSON.stringify(default_ppcard))]
+                        let z = 0;
+                        for (let x = 0; x < globalGameState.users.length; x++) {
+                            let pUser = globalGameState.users[x]
+                            if (pUser.id == window.localStorage.getItem("id")) {
+                                continue
+                            }
+                            ppcards[z].name = pUser.username
+                            ppcards[z].points = pUser.points
+                            ppcards[z].turn = (globalGameState.turns[globalGameState.turns.length - 1].id == pUser.id ? "My turn!" : ""/*"waiting..."*/)
+                            z++
+                        }
+                        // dealt cards rendering
+                        $("#cardTable").html("") // clears all cards
+                        let htmlRes = ""
+                        for (let x = 0; x < globalGameState.dealtcards.length; x++) {
+                            // console.log("HERE")
+                            let dealerCard = globalGameState.dealtcards[x]
+                            console.log(dealerCard.imgsrc)
+                            let tsn = (dealerCard.active == 1 ? x : -1)
+                            let tstext = (dealerCard.active == 1 ? "🗸" : "⨯")
+                            let myinfo = (dealtCardsInfoStatus[x] ? dealerCard.info : dealerCard.turninfo)
+                            myinfo = dealerCard.name.toUpperCase() + "<br>" + myinfo + "<br>Can be replaced after: " + String(dealerCard.replaceAfter)
+                            htmlRes += `<div class="dealercard" id="dealercard${x}" style="background-image: url('${dealerCard.imgsrc}')">
+                                <span class="textcolor" style="background-color: ${dealerCard.color}">◍</span>
+            <span class="textimage"><span class="textbenefit">${dealerCard.benefit}</span><span class="textturn">${dealerCard.turnsTill}</span><span
+                    class="textcost">${dealerCard.cost}</span><span class="textselected" id="ts${x}" onclick="textselect(${tsn})">${tstext}</span></span>
+                    <span class="textimage"><span class="textinfo" id="textinfo${x}" onclick="revealturninfo(${x})">${myinfo}</span></span>
+        </div>`
+                        }
+                        htmlRes = `<div class="playerprofile dealercard">
+                        <span class="playername">${ppcards[0].name}</span><br>
+                        <span class="playerturn">${ppcards[0].turn}</span><br>
+                        <span class="playerpoints">${ppcards[0].points}</span>
+                        </div>` + htmlRes + `<div class="playerprofile dealercard">
+                        <span class="playername">${ppcards[1].name}</span><br>
+                        <span class="playerturn">${ppcards[1].turn}</span><br>
+                        <span class="playerpoints">${ppcards[1].points}</span>
+                        </div>`
+                        // console.log(htmlRes)
+                        $("#cardTable").html(htmlRes)
+                        for (let x = 0; x < globalGameState.dealtcards.length; x++) {
+                            $('#ts' + String(x)).css("color", dealtCardsStatus[x] ? "#F5E609" : "black")
+                            // console.log('#textinfo' + String(x))
+                            $('#textinfo' + String(x)).data("data-info", globalGameState.dealtcards[x].info)
+                            $('#textinfo' + String(x)).data("data-turninfo", "rand turn info")
+                        }
+
+
+                        // hand cards rendering
+                        $("#handTable").html("") // clears all cards
+                        htmlRes = ""
+                        let myuser
+                        for (let user of globalGameState.users) {
+                            if (user.id == window.localStorage.getItem("id")) {
+                                myuser = user
+                                break
+                            }
+                        }
+                        for (let x = 0; x < myuser.cards.length; x++) {
+                            // console.log("HERE")
+                            let usercard = myuser.cards[x]
+                            console.log(usercard.imgsrc)
+                            let htstext = "🗸"
+                            let myinfo = (hdealtCardsInfoStatus[x] ? usercard.info : usercard.turninfo)
+                            myinfo = usercard.name.toUpperCase() + "<br>" + myinfo + "<br>Can be replaced after: " + String(usercard.replaceAfter)
+                            htmlRes += `<div class="dealercard" id="handcard${x}" style="background-image: url('${usercard.imgsrc}')">
+                                <span class="textcolor" style="background-color: ${usercard.color}; color: black;">◍</span>
+            <span class="textimage"><span class="textbenefit">${usercard.benefit}</span><span class="textturn">${usercard.turnsTill}</span><span
+                    class="textcost">${usercard.cost}</span><span class="textselected" id="hts${x}" onclick="htextselect(${x})">${htstext}</span></span>
+                    <span class="textimage"><span class="textinfo" id="htextinfo${x}" onclick="hrevealturninfo(${x})">${myinfo}</span></span>
+                    </div>`
+                        }
+                        // console.log(htmlRes)
+                        if (globalGameState.turns[globalGameState.turns.length - 1].id == window.localStorage.getItem("id")) {
+                            $("#yourhandtext").text("Your hand: (Your turn!)")
+                        } else {
+                            $("#yourhandtext").text("Your hand:")
+                        }
+                        // htmlRes = (globalGameState.turns[globalGameState.turns.length - 1].id == window.localStorage.getItem("id") ? "(your turn)" : "") + "<br>" + htmlRes
+                        // if (myuser.cards.length == 0) {
+                        //     htmlRes += `No cards currently`
+                        // }
+                        if (myuser.cards.length == 0) {
+                            $("#handTableNoCards").text("No cards currently")
+                        } else {
+                            $("#handTableNoCards").text("")
+                        }
+                        htmlRes = `<div class="playerprofile dealercard">
+                        <span class="playername">${ppcards[2].name}</span><br>
+                        <span class="playerturn">${ppcards[2].turn}</span><br>
+                        <span class="playerpoints">${ppcards[2].points}</span>
+                        </div>` + htmlRes + `<div class="playerprofile dealercard">
+                        <span class="playername">${ppcards[3].name}</span><br>
+                        <span class="playerturn">${ppcards[3].turn}</span><br>
+                        <span class="playerpoints">${ppcards[3].points}</span>
+                        </div>`
+                        $("#handTable").html(htmlRes)
+                        for (let x = 0; x < handCards.length; x++) {
+                            $('#hts' + String(x)).css("color", handCardsStatus[x] ? "#F5E609" : "black")
+                        }
+                        $("#yourpointstextpoints").text(myuser.points)
+                    }
+                }
+            }
+        )
+    }
+
+    start()
+    setInterval(update, 1000)
+    setInterval(responsive, 100)
+
+    function redirectToRoom(roomNumber) {
+        window.localStorage.setItem("username", document.getElementById("username").value)
+        window.localStorage.setItem("roomNumber", roomNumber)
+        window.location.href = "org/room1";
+    }
+</script>
+
+</html>

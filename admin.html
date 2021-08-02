@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+<script>
+    function visit(rn) {
+        window.localStorage.setItem("roomNumber", rn)
+        window.localStorage.setItem("id", "a")
+        window.localStorage.setItem("username", "a")
+        window.open("/password/admin/room" + rn)
+    }
+    function update() {
+        for (let x = 1; x <= 5; x++) {
+            let roomNumber = x
+            fetch("/api/fullpoll_room" + roomNumber).then(res => res.json()).then(res => {
+                if (res.success) {
+                    let gs = res.room.gameState
+                    let currentUsers = res.room.currentUsers
+                    let status = res.room.gameState.status
+                    $(`#room${roomNumber}status`).text(status)
+                    $(`#room${roomNumber}capac`).text("(" + res.room.currentCapacity + "/5)")
+                    let currentUsersText = ""
+                    for (let user of currentUsers) {
+                        currentUsersText += `<a href="/password/admin/kick?username=a&id=${user.id}&roomNumber=${roomNumber}" target="_blank">${user.username}</a><br>`
+                    }
+                    $(`#room${roomNumber}currentusers`).html(currentUsersText)
+                    $(`#turn_room${roomNumber}`).html(gs.turns[gs.turns.length - 1].username)
+                }
+            })
+        }
+    }
+    setInterval(update, 1000)
+</script>
+
+<body>
+    <h1 style="text-align: center">Animal Island Admin Page</h1>
+    Room 1:
+    <a href="/password/admin/pass_room1" target="_blank">Pass turn</a>
+    <a href="/password/admin/start_room1" target="_blank">Start room</a>
+    <a href="/password/admin/end_room1" target="_blank">End room</a>
+    <a href="/password/admin/restart_room1" target="_blank">Restart room</a>
+    <a onclick="visit(1)" target="_blank">Visit room</a>
+    &nbsp;&nbsp;Current turn: <span id="turn_room1"></span>
+    <br><br><br>Room 2:
+    <a href="/password/admin/pass_room2" target="_blank">Pass turn</a>
+    <a href="/password/admin/start_room2" target="_blank">Start room</a>
+    <a href="/password/admin/end_room2" target="_blank">End room</a>
+    <a href="/password/admin/restart_room2" target="_blank">Restart room</a>
+    <a onclick="visit(2)" target="_blank">Visit room</a>
+    &nbsp;&nbsp;Current turn: <span id="turn_room2"></span>
+    <br><br><br>Room 3:
+    <a href="/password/admin/pass_room3" target="_blank">Pass turn</a>
+    <a href="/password/admin/start_room3" target="_blank">Start room</a>
+    <a href="/password/admin/end_room3" target="_blank">End room</a>
+    <a href="/password/admin/restart_room3" target="_blank">Restart room</a>
+    <a onclick="visit(3)" target="_blank">Visit room</a>
+    &nbsp;&nbsp;Current turn: <span id="turn_room3"></span>
+    <br><br><br>Room 4:
+    <a href="/password/admin/pass_room4" target="_blank">Pass turn</a>
+    <a href="/password/admin/start_room4" target="_blank">Start room</a>
+    <a href="/password/admin/end_room4" target="_blank">End room</a>
+    <a href="/password/admin/restart_room4" target="_blank">Restart room</a>
+    <a onclick="visit(4)" target="_blank">Visit room</a>
+    &nbsp;&nbsp;Current turn: <span id="turn_room4"></span>
+    <br><br><br>Room 5:
+    <a href="/password/admin/pass_room5" target="_blank">Pass turn</a>
+    <a href="/password/admin/start_room5" target="_blank">Start room</a>
+    <a href="/password/admin/end_room5" target="_blank">End room</a>
+    <a href="/password/admin/restart_room5" target="_blank">Restart room</a>
+    <a onclick="visit(5)" target="_blank">Visit room</a>
+    &nbsp;&nbsp;Current turn: <span id="turn_room5"></span>
+    <br><br>
+    <h2>Click on names to kick</h2>
+    <div id="stati">
+        <div>
+            Room 1 Status: <span id="room1status"></span>&nbsp;&nbsp;<span id="room1capac"></span><br>
+            <span id="room1currentusers"></span><br>
+            <span id="room1users"></span><br>
+        </div><br>
+        <div>
+            Room 2 Status: <span id="room2status"></span>&nbsp;&nbsp;<span id="room2capac"></span><br>
+            <span id="room2currentusers"></span><br>
+            <span id="room2users"></span><br>
+        </div><br>
+        <div>
+            Room 3 Status: <span id="room3status"></span>&nbsp;&nbsp;<span id="room3capac"></span><br>
+            <span id="room3currentusers"></span><br>
+            <span id="room3users"></span><br>
+        </div><br>
+        <div>
+            Room 4 Status: <span id="room4status"></span>&nbsp;&nbsp;<span id="room4capac"></span><br>
+            <span id="room4currentusers"></span><br>
+            <span id="room4users"></span><br>
+        </div><br>
+        <div>
+            Room 5 Status: <span id="room5status"></span>&nbsp;&nbsp;<span id="room5capac"></span><br>
+            <span id="room5currentusers"></span><br>
+            <span id="room5users"></span><br>
+        </div><br>
+    </div>
+</body>
+
+<style>
+    body {
+        width: 100%;
+        background-color: rgb(150, 133, 255);
+        color: beige;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    a {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    body>div>div {
+        width: 20%;
+        height: 200px;
+    }
+
+    #stati {
+        display: flex;
+    }
+</style>
+
+</html>

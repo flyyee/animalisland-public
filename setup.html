@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+<script>
+    function visit(rn) {
+        window.localStorage.setItem("roomNumber", rn)
+        window.localStorage.setItem("id", "a")
+        window.localStorage.setItem("username", "a")
+        window.open("/password/admin/room" + rn)
+    }
+    function update() {
+        for (let x = 1; x <= 5; x++) {
+            let roomNumber = x
+            fetch("/api/fullpoll_room" + roomNumber).then(res => res.json()).then(res => {
+                if (res.success) {
+                    let gs = res.room.gameState
+                    let currentUsers = res.room.currentUsers
+                    let status = res.room.gameState.status
+                    $(`#room${roomNumber}status`).text(status)
+                    $(`#room${roomNumber}capac`).text("(" + res.room.currentCapacity + "/5)")
+                    let currentUsersText = ""
+                    for (let user of currentUsers) {
+                        currentUsersText += user.username + "<br>"
+                    }
+                    $(`#room${roomNumber}currentusers`).html(currentUsersText)
+                }
+            })
+        }
+    }
+    setInterval(update, 1000)
+    function submit() {
+        if ($("#name").val() == "") {
+            alert("Name is empty")
+        } else if ($("#img").val() == "") {
+            alert("Image source is empty")
+        } else if ($("#bio").val() == "") {
+            alert("Biography is empty")
+        } else if ($("#cost").val() == "") {
+            alert("Cost is empty")
+        } else if ($("#benefit").val() == "") {
+            alert("Benefit is empty")
+        } else if ($("#turnsTill").val() == "") {
+            alert("Effect time is empty")
+        } else {
+            let acceptedColors = ["red", "green", "blue", "yellow", "black", "white"]
+            if (!acceptedColors.includes($("#color").val())) {
+                alert("Invalid color.")
+            } else if ($("#turnsTill").val() == "" && $("#type").val() != "1") {
+                alert("Invalid effect time.")
+            } else {
+                if ($("#replaceAfter").val() == "") {
+                    $("#replaceAfter").val("0")
+                }
+                let data = {
+                    name: $("#name").val(),
+                    imgsrc: $("#imgsrc").val(),
+                    bio: $("#bio").val(),
+                    color: $("#color").val(),
+                    type: $("#type").val(),
+                    cost: $("#cost").val(),
+                    benefit: $("#benefit").val(),
+                    turnsTill: $("#turnsTill").val(),
+                    replaceAfter: $("#replaceAfter").val()
+                }
+                alert("Success!")
+                fetch(`/api/setup`, {
+                    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // 'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    redirect: 'follow', // manual, *follow, error
+                    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+                    body: JSON.stringify(data) // body data type must match "Content-Type" header
+                }).then(res => {
+                    console.log(res)
+                })
+            }
+        }
+
+    }
+
+    function checkimgsrc() {
+        window.open($("#imgsrc").val())
+    }
+
+</script>
+
+<body>
+    <h1 style="text-align: center">Animal Island Setup Page</h1>
+    Name: <input type="text" id="name"><br>
+    Image source: <input type="text" id="imgsrc"><a onclick="checkimgsrc()">Check</a><br>
+    Biography: <input type="text" id="bio"><br>
+    Color: <input type="text" id="color"><br>
+    Type: <input type="number" id="type"><br>
+    Cost: <input type="number" id="cost"><br>
+    Benefit: <input type="number" id="benefit"><br>
+    Effect time: <input type="number" id="turnsTill"><br>
+    Replace duration: <input type="number" id="replaceAfter"><br>
+    <h2>Help</h2>
+    <div id="help">
+        The accepted colours are: red, blue, green, yellow, black, white.<br>
+        Both cost and benefit are POSITIVE integers.<br>
+        Effect time is how long effect lasts/when effect occurs.<br>
+        For type 2/3 this is in how many turns the long-term cost/benefit is incurred.<br>
+        For type 4/5 this is in how many turns the recurring cost/benefit is given for. If meant to last long, input
+        99.<br>
+        For type 1, leave blank or enter 0.<br>
+        Replace duration is how long before the card can be replaced.<br>
+        If the card can be replaced instantly, leave empty or enter 0.
+    </div>
+    <button onclick="submit()">Submit</button>
+</body>
+
+<style>
+    body {
+        text-align: center;
+        font-size: 20px;
+        width: 99%;
+        background-color: rgb(150, 133, 255);
+        color: beige;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    input {
+        padding: 3px;
+        margin: 3px;
+        font-size: 20px;
+    }
+
+    #help,
+    h2 {
+        text-align: left;
+    }
+</style>
+
+</html>

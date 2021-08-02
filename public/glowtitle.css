@@ -1,0 +1,32 @@
+svg {
+    display: inline-block;
+    position: relative;
+}
+
+svg text {
+    font-family: Forest;
+    letter-spacing: 10px;
+    stroke: #9FE2BF;
+    font-size: 40px;
+    font-weight: 700;
+    stroke-width: 1;
+   
+    animation: textAnimate 5s infinite alternate;
+    
+  }
+  
+  @keyframes textAnimate {
+    0% {
+      stroke-dasharray: 0 50%;
+      stroke-dashoffset:  20%;
+      fill:#9FE2BF
+  
+    }
+    
+    100% {
+      stroke-dasharray: 50% 0;
+      stroke-dashoffstet: -20%;
+      fill: #9fe2bf00
+    }
+    
+  }
