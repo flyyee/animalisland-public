@@ -1,2 +1,1 @@
-module.exports = "mongodb+srv://fly:MDwingSA7vGh2RNa@cluster0.znztz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-// connstring = "mongodb+srv://fly:<password>@cluster0.znztz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+module.exports = "redacted"
